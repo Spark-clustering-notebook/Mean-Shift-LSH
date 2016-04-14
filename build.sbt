@@ -2,7 +2,7 @@ organization := "spartakus"
 
 name := "Neirest Neighbours Mean Shift LSH"
 
-version := "1.0"
+version := "1.1"
 
 scalaVersion := "2.10.5"
 
@@ -13,3 +13,7 @@ libraryDependencies ++= Seq(
 	"org.apache.spark"  %% "spark-mllib"  % sparkVersion % "provided",
 	"org.scalatest" % "scalatest_2.10" % "2.2.4" % "test"
 )
+
+bintrayOrganization := Some("spark-clustering-notebook")
+
+bintrayEnsureLicenses := false
