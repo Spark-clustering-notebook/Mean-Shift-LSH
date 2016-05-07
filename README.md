@@ -6,13 +6,15 @@ This algorithm was created during an internship at Computer Science Laboratory (
 
 * **k** is the number of neighbours to look at in order to compute centroid.
 * **nbseg**  is the number of segments on which the data vectors are projected during LSH. Its value should usually be larger than 20, depending on the data set.
-* **nbblocs**  is a crucial parameter as larger values give faster but less accurate LSH approximate nearest neighbors, and as smaller values give slower but more accurate approximations.
+* **nbblocs1**  is a crucial parameter as larger values give faster but less accurate LSH approximate nearest neighbors, and as smaller values give slower but more accurate approximations.
+* **nbblocs2**  as larger values give faster but less accurate LSH approximate nearest neighbors, and as smaller values give slower but more accurate approximations.
 * **cmin**  is the threshold under which clusters with fewer than cmin members are merged with the next nearest cluster.
 * **normalisation** is a flag if the data should be first normalized (X-Xmin)/(Xmax-Xmin)  before clustering.
 * **w** is a uniformisation constant for LSH.
 * **npPart** is the default parallelism outside the gradient ascent.
 * **yStarIter** is the maximum number of iterations in the gradient ascent in the mean shift update.
-* **threshold_cluster** is the threshold under which two final mean shift iterates are considered to be in the same cluster.
+* **threshold_cluster1** is the threshold under which two final mean shift iterates are considered to be in the same cluster.
+* **threshold_cluster2** is the threshold under which two final clusters are considered to be the same.
 
 ## Usage
 
@@ -33,13 +35,16 @@ To carry out image analysis, it is recommended to convert the usual color format
   val model = meanShift.train(  sc,
                           parsedData,
                           k=60,
-                          threshold_cluster=0.05,
+                          threshold_cluster1=0.05,
+                          threshold_cluster2=0.05,
                           yStarIter=10,
                           cmin=0,
                           normalisation=true,
                           w=1,
                           nbseg=100,
-                          nbblocs=50,
+                          nbblocs1=50,
+                          nbblocs2=50,
+                          nbLabelIter=1,
                           nbPart=defp)  
                           
   // Save result for an image as (ID, Vector, ClusterNumber)
@@ -56,12 +61,17 @@ To carry out image analysis, it is recommended to convert the usual color format
 #### Image segmentation example
 
 The picture on top left corner is the #117 from Berkeley Segmentation Dataset and Benchmark repository. Others are obtained with :
-* **nbblocs** : 200 (top right) , 500 (bottom left), 1000 (bottom right) 
+* **nbblocs1** : 200 (top right) , 500 (bottom left), 1000 (bottom right) 
+* **nbblocs2** : 1
 * **k** : 50
-* **threshold_cluster** : 0.05
+* **threshold_cluster1** : 0.05
+* **threshold_cluster2** : 0.05 // doesn't matter with nbblocs2 = 1
 * **yStarIter** : 10
+* **nbLabelIter** : 1
 * **w** : 1
 * **cmin** : 200
+
+
 ![alt text][logo]
 
 [logo]: http://img11.hostingpics.net/pics/393309flower.png
