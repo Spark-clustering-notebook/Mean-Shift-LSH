@@ -89,9 +89,10 @@ class MsLsh private (
   private var nbblocs1:Int,
   private var nbblocs2:Int,
   private var nbLabelIter:Int,
-  private var numPart:Int ) extends Serializable {  
+  private var numPart:Int,
+  private var monitoring:Boolean ) extends Serializable {  
 
-  def this() = this(50,0.001,0.05,10,0,true,1,100,100,50,5,100)
+  def this() = this(50,0.001,0.05,10,0,true,1,100,100,50,5,100, false)
   
   /**
    * Set number of partition for coalesce and partioner
@@ -187,7 +188,16 @@ class MsLsh private (
   def set_nbLabelIter(nbLabelIter_val:Int) : this.type = {
     this.nbLabelIter = nbLabelIter_val
     this
-  }  
+  }
+
+
+  /**
+   * Set to true in order to monitor progression of Mean Shift
+   */
+  def set_monitoring(monitoring_val:Boolean) : this.type = {
+    this.monitoring = monitoring_val
+    this
+  }
   
   /**
    * Get k value
@@ -300,7 +310,7 @@ class MsLsh private (
   /**
    * Mean Shift LSH accomplish his clustering work
    */
-  def run( data:RDD[(String,Vector)], sc:SparkContext ) : ArrayBuffer[Mean_shift_lsh_model] = {
+  def run( data:RDD[(String,Vector)], sc:SparkContext, f1:(String,Any)=>Unit ) : ArrayBuffer[Mean_shift_lsh_model] = {
 
     var data0 : RDD[(String,Vector)] = sc.emptyRDD
     /**
@@ -350,6 +360,8 @@ class MsLsh private (
     val deb1 = System.nanoTime
    
     for( ind <- 1 to yStarIter  ) {
+      if(monitoring) f1("yStarIter"+ind.toString, ind)
+
       val rdd_LSH_ord =  rdd_LSH.sortBy(_._4).mapPartitions( x => {
         val bucket = x.toArray
         bucket.map(y => {
@@ -599,7 +611,9 @@ object MsLsh {
     nbblocs1:Int,
     nbblocs2:Int,
     nbLabelIter:Int,
-    nbPart:Int) : ArrayBuffer[Mean_shift_lsh_model] = {
+    nbPart:Int,
+    monitoring:Boolean=false,
+    fct:(String,Any)=>Unit) : ArrayBuffer[Mean_shift_lsh_model] = {
       new MsLsh().set_k(k)
         .set_threshold_cluster1(threshold_cluster1)
         .set_threshold_cluster2(threshold_cluster2)
@@ -612,7 +626,8 @@ object MsLsh {
         .set_nbblocs2(nbblocs2)
         .set_nbLabelIter(nbLabelIter)
         .set_numPart(nbPart)
-        .run(data,sc)
+        .set_monitoring(monitoring)
+        .run(data, sc, fct)
   }
 
   /**
