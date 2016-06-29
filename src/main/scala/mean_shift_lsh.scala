@@ -36,7 +36,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark
 import java.io._
 /**
- * Mean-Shift-LSH clustering 
+ * Mean-Shift-LSH clustering
  * This algorithm could be used to analyse complex multivariate multidimensional data.
  * It can also be apply in order to analyse image, to use this features it is recommanded to convert image from RGB space to L*u*v* space
  */
@@ -44,7 +44,7 @@ import java.io._
 /**
  * The class which transform vector to scalar thank's to LSH
  */
-case class LshHash extends Serializable  {      
+case class LshHash extends Serializable  {
   def hashfunc(x:Vector, w:Double, b:Double, tabHash1:Array[Array[Double]]) : Double = {
     var tabHash = Array.empty[Double]
     val x1 = x.toArray
@@ -52,7 +52,7 @@ case class LshHash extends Serializable  {
       var sum = 0.0
       for( ind2 <- x1.indices) {
         sum = sum + (x1(ind2)*tabHash1(ind)(ind2))
-        }     
+        }
       tabHash =  tabHash :+ (sum+b)/w
     }
     tabHash.reduce(_+_)
@@ -90,18 +90,18 @@ class MsLsh private (
   private var nbblocs2:Int,
   private var nbLabelIter:Int,
   private var numPart:Int,
-  private var monitoring:Boolean ) extends Serializable {  
+  private var monitoring:Boolean ) extends Serializable {
 
   def this() = this(50,0.001,0.05,10,0,true,1,100,100,50,5,100, false)
-  
+
   /**
    * Set number of partition for coalesce and partioner
    */
-  def set_numPart(nP:Int) : this.type = { 
+  def set_numPart(nP:Int) : this.type = {
     this.numPart = nP
     this
   }
-  
+
   /**
    * Set normalisation boolean
    */
@@ -109,7 +109,7 @@ class MsLsh private (
     this.normalisation = bool1
     this
   }
-    
+
   /**
    * Set w
    */
@@ -117,7 +117,7 @@ class MsLsh private (
     this.w = ww
     this
   }
-  
+
   /**
    * Set image analysis boolean
    */
@@ -125,7 +125,7 @@ class MsLsh private (
     this.nbseg = nbseg1
     this
   }
-  
+
   /**
    * Set image analysis boolean
    */
@@ -133,7 +133,7 @@ class MsLsh private (
     this.nbblocs1 = bloc1
     this
   }
-    
+
   /**
    * Set image analysis boolean
    */
@@ -141,7 +141,7 @@ class MsLsh private (
     this.nbblocs2 = bloc2
     this
   }
-  
+
   /**
    * Set k value
    */
@@ -149,14 +149,14 @@ class MsLsh private (
     this.k = kval
     this
   }
-  
+
   /**
    * Set threshold 1 for labeling step
    */
   def set_threshold_cluster1(threshold_cluster1_val:Double) : this.type = {
     this.threshold_cluster1 = threshold_cluster1_val
     this
-  }  
+  }
 
   /**
    * Set threshold 2 for labeling step
@@ -165,7 +165,7 @@ class MsLsh private (
     this.threshold_cluster2 = threshold_cluster2_val
     this
   }
-  
+
   /**
    * Set iteration number for ascend gradient step
    */
@@ -173,17 +173,17 @@ class MsLsh private (
     this.yStarIter = yStarIter_val
     this
   }
-  
+
   /**
    * Set minimal cardinality for cluster
    */
   def set_cmin(cmin_val:Int) : this.type = {
     this.cmin = cmin_val
     this
-  }  
-    
+  }
+
   /**
-   * Set number of time we makke labelizing step 
+   * Set number of time we makke labelizing step
    */
   def set_nbLabelIter(nbLabelIter_val:Int) : this.type = {
     this.nbLabelIter = nbLabelIter_val
@@ -198,47 +198,47 @@ class MsLsh private (
     this.monitoring = monitoring_val
     this
   }
-  
+
   /**
    * Get k value
    */
   def get_k = this.k
-    
+
   /**
    * Get nbblocs1 value
    */
   def get_nbblocs1 = this.nbblocs1
-      
+
   /**
    * Get nbblocs2 value
    */
   def get_nbblocs2 = this.nbblocs2
-  
+
   /**
    * Get threshold 1 value
    */
   def get_threshold_cluster1 = this.threshold_cluster1
-    
+
   /**
    * Get threshold 2 value
    */
   def get_threshold_cluster2 = this.threshold_cluster2
-  
+
   /**
    * Get number of iteration for gradient ascend
    */
   def get_yStarIter = this.yStarIter
-  
+
   /**
    * Get minimal cardinality value
    */
   def get_cmin = this.cmin
-      
+
   /**
    * Get number of labelizing iteration
    */
   def get_nbLabelIter = this.nbLabelIter
-    
+
   /**
    * Create a tab with random vector where component are taken on normal law N(0,1) for LSH
    */
@@ -254,7 +254,7 @@ class MsLsh private (
     }
   tabHash0
   }
-  
+
   /**
    * Scale data to they fit on range [0,1]
    * Return a tuple where :
@@ -301,7 +301,7 @@ class MsLsh private (
         val coordXi = x._2(ind0)*(maxArray(ind0)-minArray(ind0))+minArray(ind0)
         tabcoord = tabcoord :+ coordXi
       }
-      (x._1,Vectors.dense(tabcoord))         
+      (x._1,Vectors.dense(tabcoord))
     })
     rdd2
   }
@@ -311,26 +311,27 @@ class MsLsh private (
    * Mean Shift LSH accomplish his clustering work
    */
   def run( data:RDD[(String,Vector)], sc:SparkContext, f1:(String,Any)=>Unit ) : ArrayBuffer[Mean_shift_lsh_model] = {
+    val monitor = (s:String, a:Any) => if (monitoring) f1(s,a) else ()
 
     var data0 : RDD[(String,Vector)] = sc.emptyRDD
     /**
-    * Initialisation 
+    * Initialisation
     */
     data.cache
     val size =  data.count().toInt
     var maxMinArray : Array[Array[Double]] = Array()
     var dim = 0
-    val maxK = (size/nbblocs1).toInt -1 
-  
+    val maxK = (size/nbblocs1).toInt -1
+
     if (size < cmin) { throw new IllegalStateException("Exception : cmin > data size") }
     if (maxK <= k) { throw new IllegalStateException("Exception : You set a too high K value") }
     /**
     * Dataset Normalisation
     */
-    if (normalisation) { 
+    if (normalisation) {
       val parsedData00 = scaleRdd(data)
       data0 = parsedData00._1
-      maxMinArray = Array(parsedData00._2,parsedData00._3) 
+      maxMinArray = Array(parsedData00._2,parsedData00._3)
       dim = data0.first._2.size
     }
 
@@ -338,9 +339,9 @@ class MsLsh private (
       dim = data.first._2.size
       data0 = data
     }
-    
+
     /**
-    * Gradient ascent/Research of Y* 
+    * Gradient ascent/Research of Y*
     */
     val hasher0 = new LshHash
     val centroider0 = new Bary0
@@ -350,17 +351,17 @@ class MsLsh private (
     val tabHash0 = sc.broadcast(tabHash(nbseg,dim))
     val hasher = sc.broadcast(hasher0)
     val centroider = sc.broadcast(centroider0)
-  
+
     var rdd_LSH = data0.map(x => (x._1,x._2,x._2,hasher.value.hashfunc(x._2,ww.value,b.value,tabHash0.value)))
                         .repartition(nbblocs1)
     var rdd_res : RDD[(String,Vector,Vector,Double)] = sc.emptyRDD
     data.unpersist()
-    rdd_LSH.cache.foreach(x=>{})
+    rdd_LSH.cache.count
 
     val deb1 = System.nanoTime
-   
+
     for( ind <- 1 to yStarIter  ) {
-      if(monitoring) f1("yStarIter"+ind.toString, ind)
+      monitor("Iteration".toString, ind)
 
       val rdd_LSH_ord =  rdd_LSH.sortBy(_._4).mapPartitions( x => {
         val bucket = x.toArray
@@ -374,12 +375,14 @@ class MsLsh private (
       if(ind < yStarIter){
         val rdd_LSH_unpersist = rdd_LSH
         rdd_LSH = rdd_LSH_ord.map(x => (x._1,x._2,x._3,hasher.value.hashfunc(x._3,ww.value,b.value,tabHash0.value)))
-        rdd_LSH.cache.foreach(x=>{})
+        rdd_LSH.cache.count
         rdd_LSH_unpersist.unpersist()
       }
       // rdd_res[(Index,NewVect,OrigVect,lshValue)]
       else rdd_res = rdd_LSH_ord.map(x => (x._1,x._3,x._2,hasher.value.hashfunc(x._3,ww.value,b.value,tabHash0.value)))
     }
+
+    monitor("End iterations", System.nanoTime)
 
     val rdd00 = rdd_res.sortBy(_._4)
                       .map(x=>(x._1,x._2,x._3))
@@ -394,7 +397,7 @@ class MsLsh private (
 
 
     def labelizing(rdd1: RDD[(String,Vector,Vector)]) : Mean_shift_lsh_model = {
-      
+
       val rdd0 = rdd1.mapPartitionsWithIndex( (ind,it) => {
         var stop = 1
         var labeledData = ArrayBuffer.empty[(String,(String,Vector,Vector))]
@@ -422,7 +425,7 @@ class MsLsh private (
       */
       val rdd_Ystar_labeled = rdd0.map(x=>(x._1,(x._2._1,x._2._3,x._2._2)))
                                   .partitionBy(new spark.HashPartitioner(numPart)).cache
-      
+
       val numElemByCLust = rdd_Ystar_labeled.countByKey.toArray
       quickSort(numElemByCLust)(Ordering[(Int)].on(_._1.toInt))
 
@@ -467,7 +470,7 @@ class MsLsh private (
       }
 
       /**
-      * Fusion of cluster which cardinality is smaller than cmin 
+      * Fusion of cluster which cardinality is smaller than cmin
       */
       var tab_inf_cmin = numElemByCLust2.filter( _._2 <= cmin)
       var stop_size = tab_inf_cmin.size
@@ -475,7 +478,7 @@ class MsLsh private (
       val map_ind_all = numElemByCLust2.toMap
       val tabbar00 = centroidArray2.zipWithIndex.map(x=>(x._2,x._1._1,x._1._2,map_ind_all(x._1._1),x._1._1)).toArray
       var tabbar01 = tabbar00.toBuffer
-    
+
       while(tab_ind_petit.size != 0) {
         for (cpt2 <- tabbar01.indices) {
         if(tabbar01(cpt2)._4 < cmin){
@@ -493,17 +496,17 @@ class MsLsh private (
           var tabind0 = ArrayBuffer.empty[String]
           // Update
           for( ind8 <- tab00.indices) {
-          tabind0 = tabind0 :+ tab00(ind8)._2         
+          tabind0 = tabind0 :+ tab00(ind8)._2
           tabbar01.update(tab00(ind8)._1,(tab00(ind8)._1,labelplusproche,tab00(ind8)._3,sizeplusproche+sizecurrent,tab00(ind8)._5))
           }
           for( ind8 <- tab01.indices) {
-          tabind0 = tabind0 :+ tab01(ind8)._2         
+          tabind0 = tabind0 :+ tab01(ind8)._2
           tabbar01.update(tab01(ind8)._1,(tab01(ind8)._1,labelplusproche,tab01(ind8)._3,sizeplusproche+sizecurrent,tab01(ind8)._5))
           }
           if(sizecurrent+sizeplusproche >= cmin){ tab_ind_petit --= tabind0 }
         }
         else { tab_ind_petit -= tabbar01(cpt2)._1.toString }
-        }       
+        }
       }
 
 
@@ -511,69 +514,76 @@ class MsLsh private (
       val oldToNewLabelMapb = sc.broadcast(oldToNewLabelMap)
 
       val rdd_Ystar_labeled2 = rdd_Ystar_labeled.map(x=>(oldToNewLabelMapb.value(x._1),x._2))
-    
+
       val rddf = rdd_Ystar_labeled2.map(x=>{
         var cpt4 = 0
         while ( x._1 != tabbar000.value(cpt4)._5) {cpt4 += 1}
         (tabbar000.value(cpt4)._2.toString,(x._2._1,x._2._2))
       }).cache
-    
+
       val k0 = rddf.countByKey
-      var numClust_Ystarer = k0.size 
+      var numClust_Ystarer = k0.size
       val centroidF = rddf.map(x=>(x._1,(x._2._2.toArray))).reduceByKey(_+_)
                           .map(x=>(x._1,Vectors.dense(x._2.map(_/k0(x._1)))))
-      
+
       val centroidMap = descaleRDDcentroid(centroidF,maxMinArray).collect.toMap
 
       rdd_Ystar_labeled.unpersist()
       val msmodel = new Mean_shift_lsh_model(centroidMap,rddf,maxMinArray)
       //rddf.unpersist()
       msmodel
-      
+
     }
 
-  var models = ArrayBuffer.empty[Mean_shift_lsh_model]
+    var models = ArrayBuffer.empty[Mean_shift_lsh_model]
 
-  val deb2 = System.nanoTime
+    val deb2 = System.nanoTime
 
-  for( ind00 <- 0 until nbLabelIter) {
-    models += labelizing(rdd00)    
-    if(ind00 == 0) {
-      ww.destroy()
-      b.destroy()
-      tabHash0.destroy()
-      hasher.destroy()
-      centroider.destroy()
+    monitor("Start labelizing", System.nanoTime)
+
+    for( ind00 <- 0 until nbLabelIter) {
+      monitor("Labelizing", ind00)
+      models += labelizing(rdd00)
+      if(ind00 == 0) {
+        ww.destroy()
+        b.destroy()
+        tabHash0.destroy()
+        hasher.destroy()
+        centroider.destroy()
+      }
     }
+
+    monitor("End labelizing", System.nanoTime)
+
+    val params = "size : " + size.toString + "\n" +
+             "k: " + k.toString + "\n" +
+             "threshold_cluster1 : " + threshold_cluster1.toString + "\n" +
+             "threshold_cluster2 : " + threshold_cluster2.toString + "\n" +
+             "cmin : " + cmin.toString + "\n" +
+             "nbblocs1 : " + nbblocs1.toString + "\n" +
+             "nbblocs2 : " + nbblocs2.toString + "\n" +
+             "nbseg : " + nbseg.toString + "\n" +
+             "yStarIter : " + yStarIter.toString + "\n" +
+             "normalisation : " + normalisation.toString + "\n" +
+             "w : " + w.toString + "\n" +
+             "iterMoyLabeling : " + accum.value.toDouble/(nbblocs2*nbLabelIter) + "\n" +
+             "nbElemParcouru : " + accum2.value.toDouble/nbLabelIter + "\n"
+
+    val fin2 = System.nanoTime
+    val rep = ((fin2-deb2)/1e9)/nbLabelIter
+
+    //val stats1 = params + "Montée de gradient (s) : " + res1.toString + "\n" +"Labélisation (s) : " + rep.toString
+    //monitor("Start writing stats", System.nanoTime)
+    //val file = new File("upgrade/3200k1")
+    //val bw = new BufferedWriter(new FileWriter(file))
+    //bw.write(stats1 + "\n")
+    //bw.close()
+    //monitor("Stats written", file.getAbsolutePath)
+
+    rdd00.unpersist()
+    monitor("Finished training", rep + " at " + fin2)
+    models
   }
-
-  val params = "size : " + size.toString + "\n" +
-           "k: " + k.toString + "\n" +
-           "threshold_cluster1 : " + threshold_cluster1.toString + "\n" + 
-           "threshold_cluster2 : " + threshold_cluster2.toString + "\n" +
-           "cmin : " + cmin.toString + "\n" + 
-           "nbblocs1 : " + nbblocs1.toString + "\n" + 
-           "nbblocs2 : " + nbblocs2.toString + "\n" +
-           "nbseg : " + nbseg.toString + "\n" + 
-           "yStarIter : " + yStarIter.toString + "\n" + 
-           "normalisation : " + normalisation.toString + "\n" +
-           "w : " + w.toString + "\n" +
-           "iterMoyLabeling : " + accum.value.toDouble/(nbblocs2*nbLabelIter) + "\n" +
-           "nbElemParcouru : " + accum2.value.toDouble/nbLabelIter + "\n"
-
-  val fin2 = System.nanoTime
-  val rep = ((fin2-deb2)/1e9)/nbLabelIter
-  val stats1 = params + "Montée de gradient (s) : " + res1.toString + "\n" +
-               "Labélisation (s) : " + rep.toString
-
-  val file = new File("upgrade/3200k1")
-  val bw = new BufferedWriter(new FileWriter(file))
-  bw.write(stats1 + "\n")
-  bw.close()
-  
-  rdd00.unpersist()
-  models
-  } 
 }
 
 object MsLsh {
@@ -644,7 +654,7 @@ object MsLsh {
         val coordXi = x._2._2(ind0)*(maxArray(ind0)-minArray(ind0))+minArray(ind0)
         tabcoord = tabcoord :+ coordXi
       }
-      (x._1,x._2._1,Vectors.dense(tabcoord))          
+      (x._1,x._2._1,Vectors.dense(tabcoord))
     })
     rdd2
   }
@@ -655,7 +665,7 @@ object MsLsh {
    */
   def imageAnalysis(msmodel:Mean_shift_lsh_model) : RDD[(Int,Vector,String)] = {
     val rddf = descaleRDD(msmodel.rdd,msmodel.maxMinArray)
-    val rdd_final = rddf.map(x=>(x._2.toInt,msmodel.clustersCenter(x._1),x._1)) 
+    val rdd_final = rddf.map(x=>(x._2.toInt,msmodel.clustersCenter(x._1),x._1))
     rdd_final
   }
 
@@ -665,7 +675,7 @@ object MsLsh {
    */
   def saveImageAnalysis(msmodel:Mean_shift_lsh_model, folder:String,numpart:Int=1) : Unit = {
     val rdd_final = descaleRDD(msmodel.rdd,msmodel.maxMinArray).map(x=>(x._2.toInt,msmodel.clustersCenter(x._1),x._1))
-    rdd_final.coalesce(numpart,true).sortBy(_._1).saveAsTextFile(folder)  
+    rdd_final.coalesce(numpart,true).sortBy(_._1).saveAsTextFile(folder)
   }
 
   /**
@@ -688,7 +698,7 @@ object MsLsh {
    */
   def saveClusterInfo(sc1:SparkContext, msmodel:Mean_shift_lsh_model,folder:String) : Unit = {
     val array1 = msmodel.clustersCenter.toArray
-    val cardClust = msmodel.rdd.countByKey 
+    val cardClust = msmodel.rdd.countByKey
     val rdd1 = sc1.parallelize(array1,1).map(x=>(x._1,cardClust(x._1),x._2))
     rdd1.sortBy(_._1.toInt).saveAsTextFile(folder)
   }
@@ -702,6 +712,6 @@ object MsLsh {
     quickSort(tabC)(Ordering[Double].on(_._2))
     tabC(0)._1
   }
-} 
+}
 
 

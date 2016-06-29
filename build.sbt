@@ -2,7 +2,7 @@ organization := "spartakus"
 
 name := "Neirest Neighbours Mean Shift LSH"
 
-version := "1.1"
+version := "1.3"
 
 scalaVersion := "2.10.5"
 
